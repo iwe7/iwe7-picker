@@ -1,11 +1,12 @@
 import { BetterScrollDirective, BetterManagerService } from 'iwe7-better-scroll';
-import { Component, ElementRef, Injector, Optional, ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, Injector, Optional, ViewEncapsulation, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: 'picker-col-scroll',
     templateUrl: 'picker-col-scroll.html',
     styleUrls: ['./picker-col-scroll.scss'],
-    encapsulation: ViewEncapsulation.None
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PickerColScrollComponent extends BetterScrollDirective {
     constructor(

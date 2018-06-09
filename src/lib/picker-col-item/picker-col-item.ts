@@ -1,6 +1,8 @@
-import { Directive, HostBinding, Input, ElementRef, OnInit, AfterViewInit } from '@angular/core';
+import { Directive, HostBinding, Input, ElementRef, OnInit, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 
-@Directive({ selector: '[pickerColItem]' })
+@Directive({
+    selector: '[pickerColItem]'
+})
 export class PickerColItemDirective implements AfterViewInit, OnInit {
     @HostBinding('class.wheel-item') item: boolean = true;
     @Input() pickerColItem: any;

@@ -4,7 +4,10 @@ import { PickerColItemDirective } from './../picker-col-item/picker-col-item';
 import { BetterScrollCore } from 'iwe7-better-scroll';
 import { PickerService } from './../picker-outlet/picker.service';
 import { Iwe7CoreControlValueAccessor } from 'iwe7-core';
-import { Component, Injector, SkipSelf, Optional, forwardRef, ContentChildren, QueryList, ViewChild } from '@angular/core';
+import {
+    Component, Injector, SkipSelf, Optional, forwardRef,
+    ContentChildren, QueryList, ViewChild, ChangeDetectionStrategy
+} from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 @Component({
     selector: 'picker-col',
@@ -14,7 +17,8 @@ import { NG_VALUE_ACCESSOR } from '@angular/forms';
         provide: NG_VALUE_ACCESSOR,
         useExisting: forwardRef(() => PickerColComponent),
         multi: true
-    }]
+    }],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PickerColComponent extends Iwe7CoreControlValueAccessor {
     @ContentChildren(PickerColItemDirective) items: QueryList<PickerColItemDirective>;
