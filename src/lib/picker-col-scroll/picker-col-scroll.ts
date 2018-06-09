@@ -26,7 +26,7 @@ export class PickerColScrollComponent extends BetterScrollDirective {
             this.updateContainerStyle('clientHeight', 'height');
             this.render.addClass(this.ele.nativeElement.parentElement, 'wheel');
             this.updateStyle();
-            this.setCyc('betterScrollRended', res);
+            this.setCyc('betterScrollRended', res, false);
         });
     }
 

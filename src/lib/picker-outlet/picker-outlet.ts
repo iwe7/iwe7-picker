@@ -14,8 +14,5 @@ export class PickerOutletComponent extends Iwe7CoreComponent {
     @ContentChildren(PickerColComponent) cols: QueryList<PickerColComponent>;
     constructor(injector: Injector, public pickerService: PickerService) {
         super(injector);
-        this.getCyc('ngAfterContentInit').subscribe(res => {
-            console.log(this.cols);
-        });
     }
 }

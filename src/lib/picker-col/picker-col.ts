@@ -1,4 +1,6 @@
-import { switchMap, tap, map } from 'rxjs/operators';
+import { switchMap, tap, map, pluck, filter } from 'rxjs/operators';
+import { from, of } from 'rxjs';
+
 import { PickerColScrollComponent } from './../picker-col-scroll/picker-col-scroll';
 import { PickerColItemDirective } from './../picker-col-item/picker-col-item';
 import { BetterScrollCore } from 'iwe7-better-scroll';
@@ -6,7 +8,8 @@ import { PickerService } from './../picker-outlet/picker.service';
 import { Iwe7CoreControlValueAccessor } from 'iwe7-core';
 import {
     Component, Injector, SkipSelf, Optional, forwardRef,
-    ContentChildren, QueryList, ViewChild, ChangeDetectionStrategy
+    ContentChildren, QueryList, ViewChild, ChangeDetectionStrategy,
+    Input
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 @Component({
@@ -23,9 +26,11 @@ import { NG_VALUE_ACCESSOR } from '@angular/forms';
 export class PickerColComponent extends Iwe7CoreControlValueAccessor {
     @ContentChildren(PickerColItemDirective) items: QueryList<PickerColItemDirective>;
     @ViewChild(PickerColScrollComponent) scroll: PickerColScrollComponent;
+    @Input() key: string = 'value';
     currentIndex: number = 0;
     activeItem: any;
     height: number = 36;
+    scrollInstance: BetterScrollCore;
     constructor(
         injector: Injector,
         @SkipSelf()
@@ -33,63 +38,74 @@ export class PickerColComponent extends Iwe7CoreControlValueAccessor {
         public pickerService: PickerService
     ) {
         super(injector);
-        this.getCyc('ngAfterViewInit').pipe(
-            switchMap(res => {
-                return this.scroll.getCyc('betterScrollRended').pipe(
-                    tap((scroll: BetterScrollCore) => {
-                        scroll.on('scrollEnd', (res) => {
-                            const y = res.y;
-                            const col = Math.abs(y) / this.height;
-                            this.currentIndex = Math.floor(col);
-                            const nowIndex = scroll.getSelectedIndex();
-                            if (nowIndex !== this.currentIndex) {
-                                scroll.wheelTo(this.currentIndex);
-                            }
-                            // 找到值
-                            this.items.filter((item, index) => {
-                                if (index === this.currentIndex) {
-                                    this.activeItem = item.pickerColItem;
-                                }
-                                return index === this.currentIndex;
-                            });
-                            this._onChange(this.activeItem);
-                        });
-                    })
-                );
+        this.getCyc('betterScrollInited').pipe(
+            tap((scroll: BetterScrollCore) => {
+                scroll.on('scrollEnd', (res) => {
+                    const y = res.y;
+                    const col = Math.abs(y) / this.height;
+                    this.currentIndex = Math.floor(col);
+                    const nowIndex = scroll.getSelectedIndex();
+                    if (nowIndex !== this.currentIndex) {
+                        scroll.wheelTo(this.currentIndex);
+                    }
+                    // 找到值
+                    this.items.filter((item, index) => {
+                        if (index === this.currentIndex) {
+                            this.activeItem = item.pickerColItem;
+                        }
+                        return index === this.currentIndex;
+                    });
+                    this._onChange(this.activeItem);
+                });
             })
         ).subscribe();
-        this.getCyc('ngAfterViewInit').pipe(
-            switchMap(res => {
+        this.getCyc('ngAfterContentInit').pipe(
+            tap(res => {
+                this.scroll.getCyc('betterScrollInited').subscribe(res => {
+                    this.scrollInstance = res;
+                    this.setCyc('betterScrollInited', res);
+                });
+            }),
+            switchMap(value => {
                 return this.getCyc('ngWriteValue').pipe(
-                    map(res => {
-                        this.items.find((it, index) => {
-                            if (it.pickerColItem === res) {
-                                this.currentIndex = index;
-                                this.activeItem = it.pickerColItem;
-                                return true;
-                            }
-                            return false;
-                        });
-                        return this.currentIndex;
-                    }),
-                    switchMap(currentIndex => {
-                        return this.scroll.getCyc('betterScrollRended').pipe(
-                            tap(res => {
-                                res.wheelTo(currentIndex);
-                            })
+                    pluck(this.key),
+                    switchMap(value => {
+                        return this.items.changes.pipe(
+                            map((changes: QueryList<PickerColItemDirective>) => {
+                                const items = [];
+                                changes.forEach((item, index) => {
+                                    items.push({
+                                        item: item,
+                                        index: index
+                                    });
+                                });
+                                return items;
+                            }),
+                            switchMap(items => from(items)),
+                            switchMap(item => {
+                                return of(item).pipe(
+                                    pluck('item'),
+                                    pluck('pickerColItem'),
+                                    pluck(this.key),
+                                    filter(res => res === value),
+                                    map(res => item),
+                                    tap(res => {
+                                        const activeItem = item.item.pickerColItem;
+                                        const currentIndex = item.index;
+                                        if (currentIndex !== this.currentIndex) {
+                                            setTimeout(() => {
+                                                this.scrollInstance.wheelTo(currentIndex);
+                                            }, 300);
+                                        }
+                                        this.currentIndex = currentIndex;
+                                        this.activeItem = activeItem;
+                                    })
+                                );
+                            }),
                         );
-                    })
+                    }),
                 );
             })
         ).subscribe();
-
-    }
-
-    setScroll(scroll: BetterScrollCore) {
-
-    }
-
-    setItem(data: any) {
-
     }
 }
